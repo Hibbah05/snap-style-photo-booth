@@ -12,7 +12,7 @@ export const Route = createFileRoute("/")({
 
 function Landing() {
   return (
-    <main className="min-h-screen flex flex-col items-center justify-center px-6 bg-background">
+    <main className="min-h-screen flex flex-col items-center justify-center px-6 bg-background animate-fade-in">
       <div className="text-center max-w-xl">
         <p className="text-xs tracking-[0.35em] uppercase text-muted-foreground mb-6">est. 2026</p>
         <h1 className="text-7xl md:text-8xl font-serif text-foreground leading-none">
