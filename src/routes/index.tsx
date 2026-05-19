@@ -1,26 +1,39 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/")({
-  component: Index,
+  head: () => ({
+    meta: [
+      { title: "Photo Booth — Minimal" },
+      { name: "description", content: "A minimal photo booth. Take or upload three photos, decorate, download." },
+    ],
+  }),
+  component: Landing,
 });
 
-// IMPORTANT: Replace this placeholder. For sites with multiple pages (About, Services, Contact, etc.),
-// create separate route files (about.tsx, services.tsx, contact.tsx) — don't put all pages in this file.
-function PlaceholderIndex() {
+function Landing() {
   return (
-    <div
-      className="flex min-h-screen items-center justify-center"
-      style={{ backgroundColor: "#fcfbf8" }}
-    >
-      <img
-        data-lovable-blank-page-placeholder="REMOVE_THIS"
-        src="https://cdn.gpteng.co/blank-app-v1.svg"
-        alt="Your app will live here!"
-      />
-    </div>
+    <main className="min-h-screen flex flex-col items-center justify-center px-6 bg-background">
+      <div className="text-center max-w-xl">
+        <p className="text-xs tracking-[0.35em] uppercase text-muted-foreground mb-6">est. 2026</p>
+        <h1 className="text-7xl md:text-8xl font-serif text-foreground leading-none">
+          photo<span className="italic"> booth</span>
+        </h1>
+        <div className="h-px w-24 bg-foreground/30 mx-auto my-8" />
+        <p className="text-base text-muted-foreground font-serif italic">
+          Three frames. One little memory.
+        </p>
+        <div className="mt-12">
+          <Link
+            to="/menu"
+            className="inline-block px-10 py-3 border border-foreground text-foreground text-sm tracking-[0.25em] uppercase hover:bg-foreground hover:text-background transition-colors"
+          >
+            Begin
+          </Link>
+        </div>
+      </div>
+      <footer className="absolute bottom-6 text-xs text-muted-foreground tracking-widest uppercase">
+        a quiet little booth
+      </footer>
+    </main>
   );
-}
-
-function Index() {
-  return <PlaceholderIndex />;
 }
