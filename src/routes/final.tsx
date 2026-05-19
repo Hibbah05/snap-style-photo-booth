@@ -60,7 +60,7 @@ function Final() {
   };
 
   return (
-    <main className="min-h-screen bg-background px-6 py-10 flex flex-col items-center">
+    <main className="min-h-screen bg-background px-6 py-10 flex flex-col items-center animate-fade-in">
       <Link to="/menu" className="absolute top-6 left-6 text-xs tracking-[0.25em] uppercase text-muted-foreground hover:text-foreground">
         ← back
       </Link>
