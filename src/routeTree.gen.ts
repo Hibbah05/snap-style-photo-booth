@@ -9,8 +9,32 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as UploadRouteImport } from './routes/upload'
+import { Route as MenuRouteImport } from './routes/menu'
+import { Route as FinalRouteImport } from './routes/final'
+import { Route as CaptureRouteImport } from './routes/capture'
 import { Route as IndexRouteImport } from './routes/index'
 
+const UploadRoute = UploadRouteImport.update({
+  id: '/upload',
+  path: '/upload',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MenuRoute = MenuRouteImport.update({
+  id: '/menu',
+  path: '/menu',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FinalRoute = FinalRouteImport.update({
+  id: '/final',
+  path: '/final',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CaptureRoute = CaptureRouteImport.update({
+  id: '/capture',
+  path: '/capture',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -19,28 +43,72 @@ const IndexRoute = IndexRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/capture': typeof CaptureRoute
+  '/final': typeof FinalRoute
+  '/menu': typeof MenuRoute
+  '/upload': typeof UploadRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/capture': typeof CaptureRoute
+  '/final': typeof FinalRoute
+  '/menu': typeof MenuRoute
+  '/upload': typeof UploadRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/capture': typeof CaptureRoute
+  '/final': typeof FinalRoute
+  '/menu': typeof MenuRoute
+  '/upload': typeof UploadRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths: '/' | '/capture' | '/final' | '/menu' | '/upload'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to: '/' | '/capture' | '/final' | '/menu' | '/upload'
+  id: '__root__' | '/' | '/capture' | '/final' | '/menu' | '/upload'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  CaptureRoute: typeof CaptureRoute
+  FinalRoute: typeof FinalRoute
+  MenuRoute: typeof MenuRoute
+  UploadRoute: typeof UploadRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/upload': {
+      id: '/upload'
+      path: '/upload'
+      fullPath: '/upload'
+      preLoaderRoute: typeof UploadRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/menu': {
+      id: '/menu'
+      path: '/menu'
+      fullPath: '/menu'
+      preLoaderRoute: typeof MenuRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/final': {
+      id: '/final'
+      path: '/final'
+      fullPath: '/final'
+      preLoaderRoute: typeof FinalRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/capture': {
+      id: '/capture'
+      path: '/capture'
+      fullPath: '/capture'
+      preLoaderRoute: typeof CaptureRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -53,6 +121,10 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  CaptureRoute: CaptureRoute,
+  FinalRoute: FinalRoute,
+  MenuRoute: MenuRoute,
+  UploadRoute: UploadRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
