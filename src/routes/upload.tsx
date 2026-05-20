@@ -25,6 +25,16 @@ function Upload() {
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
   const navigate = useNavigate();
 
+  // 1. The Global Filter State
+  const [activeFilter, setActiveFilter] = useState<"normal" | "bw" | "vintage">("normal");
+
+  // 2. Tailwind Classes for Live Preview
+  const filterStyles = {
+    normal: "",
+    bw: "grayscale",
+    vintage: "sepia contrast-125 brightness-90",
+  };
+
   const onPickSingle = async (i: number, file: File | null) => {
     if (!file) return;
     if (!file.type.startsWith("image/")) {
@@ -107,9 +117,41 @@ function Upload() {
   const filledCount = photos.filter(Boolean).length;
   const allReady = filledCount === 3;
 
-  const proceed = () => {
+  // 3. Bake the filter into the uploaded images before proceeding
+  const proceed = async () => {
     if (!allReady) return;
-    setBoothPhotos(photos.filter(Boolean) as string[]);
+    
+    const validPhotos = photos.filter(Boolean) as string[];
+    
+    // Draw the uploaded images to a hidden canvas with the filter applied to bake the pixels
+    const bakedPhotos = await Promise.all(
+      validPhotos.map((src) => {
+        return new Promise<string>((resolve) => {
+          if (activeFilter === "normal") return resolve(src); // Skip baking if normal
+          
+          const img = new Image();
+          img.onload = () => {
+            const canvas = document.createElement("canvas");
+            canvas.width = img.width;
+            canvas.height = img.height;
+            const ctx = canvas.getContext("2d")!;
+            
+            const canvasFilters = {
+              normal: "none",
+              bw: "grayscale(100%)",
+              vintage: "sepia(100%) contrast(125%) brightness(90%)",
+            };
+            
+            ctx.filter = canvasFilters[activeFilter];
+            ctx.drawImage(img, 0, 0);
+            resolve(canvas.toDataURL("image/jpeg", 0.92));
+          };
+          img.src = src;
+        });
+      })
+    );
+
+    setBoothPhotos(bakedPhotos);
     navigate({ to: "/final" });
   };
 
@@ -122,12 +164,34 @@ function Upload() {
         ← back
       </Link>
 
-      <div className="text-center mb-8">
+      <div className="text-center mb-6">
         <p className="text-xs tracking-[0.35em] uppercase text-muted-foreground mb-2">upload</p>
         <h2 className="text-4xl md:text-5xl font-serif">choose three photos</h2>
         <p className="text-sm text-muted-foreground font-serif italic mt-3">
           {filledCount} of 3 selected
         </p>
+      </div>
+
+      {/* 4. The Interactive Filter Menu */}
+      <div className="flex gap-4 justify-center mb-8">
+        <button 
+          onClick={() => setActiveFilter("normal")}
+          className={`px-4 py-2 rounded-full text-xs tracking-widest uppercase transition-colors ${activeFilter === "normal" ? "bg-foreground text-background" : "bg-muted text-foreground hover:bg-muted/80"}`}
+        >
+          Normal
+        </button>
+        <button 
+          onClick={() => setActiveFilter("bw")}
+          className={`px-4 py-2 rounded-full text-xs tracking-widest uppercase transition-colors ${activeFilter === "bw" ? "bg-foreground text-background" : "bg-muted text-foreground hover:bg-muted/80"}`}
+        >
+          B&W
+        </button>
+        <button 
+          onClick={() => setActiveFilter("vintage")}
+          className={`px-4 py-2 rounded-full text-xs tracking-widest uppercase transition-colors ${activeFilter === "vintage" ? "bg-foreground text-background" : "bg-muted text-foreground hover:bg-muted/80"}`}
+        >
+          Vintage
+        </button>
       </div>
 
       <label className="mb-8 px-6 py-2 border border-border bg-card text-xs tracking-[0.25em] uppercase cursor-pointer hover:border-foreground hover:-translate-y-0.5 transition-all">
@@ -164,10 +228,11 @@ function Upload() {
             >
               <label className="relative block aspect-square bg-card border border-border cursor-pointer hover:border-foreground transition-colors overflow-hidden group">
                 {p ? (
+                  /* 5. Apply the Tailwind CSS to the preview image */
                   <img
                     src={p}
                     alt={`frame ${i + 1}`}
-                    className="w-full h-full object-cover animate-fade-in pointer-events-none"
+                    className={`w-full h-full object-cover animate-fade-in pointer-events-none transition-all duration-300 ${filterStyles[activeFilter]}`}
                     draggable={false}
                   />
                 ) : (

@@ -19,6 +19,16 @@ function Capture() {
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
+  // 1. The Global Filter State
+  const [activeFilter, setActiveFilter] = useState<"normal" | "bw" | "vintage">("normal");
+
+  // 2. Tailwind Classes for Live Video Preview
+  const filterStyles = {
+    normal: "",
+    bw: "grayscale",
+    vintage: "sepia contrast-125 brightness-90",
+  };
+
   useEffect(() => {
     let stream: MediaStream | null = null;
     navigator.mediaDevices
@@ -43,6 +53,15 @@ function Capture() {
     c.width = size;
     c.height = size;
     const ctx = c.getContext("2d")!;
+
+    // 3. Bake the filter directly into the saved photo!
+    const canvasFilters = {
+      normal: "none",
+      bw: "grayscale(100%)",
+      vintage: "sepia(100%) contrast(125%) brightness(90%)",
+    };
+    ctx.filter = canvasFilters[activeFilter];
+
     // mirror
     ctx.translate(size, 0);
     ctx.scale(-1, 1);
@@ -75,6 +94,7 @@ function Capture() {
       <Link to="/menu" className="absolute top-6 left-6 text-xs tracking-[0.25em] uppercase text-muted-foreground hover:text-foreground">
         ← back
       </Link>
+      
       <div className="text-center mb-6">
         <p className="text-xs tracking-[0.35em] uppercase text-muted-foreground mb-2">
           {shots.length < 3 ? `frame ${shot + 1} of 3` : "complete"}
@@ -89,6 +109,30 @@ function Capture() {
         </div>
       )}
 
+      {/* 4. The Interactive Filter Menu */}
+      {!error && shots.length === 0 && (
+        <div className="flex gap-4 justify-center mb-6">
+          <button 
+            onClick={() => setActiveFilter("normal")}
+            className={`px-4 py-2 rounded-full text-xs tracking-widest uppercase transition-colors ${activeFilter === "normal" ? "bg-foreground text-background" : "bg-muted text-foreground hover:bg-muted/80"}`}
+          >
+            Normal
+          </button>
+          <button 
+            onClick={() => setActiveFilter("bw")}
+            className={`px-4 py-2 rounded-full text-xs tracking-widest uppercase transition-colors ${activeFilter === "bw" ? "bg-foreground text-background" : "bg-muted text-foreground hover:bg-muted/80"}`}
+          >
+            B&W
+          </button>
+          <button 
+            onClick={() => setActiveFilter("vintage")}
+            className={`px-4 py-2 rounded-full text-xs tracking-widest uppercase transition-colors ${activeFilter === "vintage" ? "bg-foreground text-background" : "bg-muted text-foreground hover:bg-muted/80"}`}
+          >
+            Vintage
+          </button>
+        </div>
+      )}
+
       <div className="relative">
         <div className="absolute -top-4 -left-4 -right-4 text-center z-20 pointer-events-none">
           {count !== null && (
@@ -98,12 +142,13 @@ function Capture() {
           )}
         </div>
         <div className="relative w-[min(80vw,520px)] aspect-square bg-muted border border-border overflow-hidden">
+          {/* 5. Apply the Tailwind CSS to the live feed */}
           <video
             ref={videoRef}
             autoPlay
             playsInline
             muted
-            className="w-full h-full object-cover"
+            className={`w-full h-full object-cover transition-all duration-300 ${filterStyles[activeFilter]}`}
             style={{ transform: "scaleX(-1)" }}
           />
         </div>
