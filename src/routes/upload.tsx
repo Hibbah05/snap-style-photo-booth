@@ -117,33 +117,47 @@ function Upload() {
   const filledCount = photos.filter(Boolean).length;
   const allReady = filledCount === 3;
 
-  // 3. Bake the filter into the uploaded images before proceeding
   const proceed = async () => {
     if (!allReady) return;
     
     const validPhotos = photos.filter(Boolean) as string[];
     
-    // Draw the uploaded images to a hidden canvas with the filter applied to bake the pixels
+    // 📸 Mobile-Safe Pixel Baking for Uploads
     const bakedPhotos = await Promise.all(
       validPhotos.map((src) => {
         return new Promise<string>((resolve) => {
-          if (activeFilter === "normal") return resolve(src); // Skip baking if normal
+          if (activeFilter === "normal") return resolve(src); 
           
           const img = new Image();
           img.onload = () => {
             const canvas = document.createElement("canvas");
             canvas.width = img.width;
             canvas.height = img.height;
-            const ctx = canvas.getContext("2d")!;
+            const ctx = canvas.getContext("2d", { willReadFrequently: true })!;
             
-            const canvasFilters = {
-              normal: "none",
-              bw: "grayscale(100%)",
-              vintage: "sepia(100%) contrast(125%) brightness(90%)",
-            };
-            
-            ctx.filter = canvasFilters[activeFilter];
             ctx.drawImage(img, 0, 0);
+            
+            const imgData = ctx.getImageData(0, 0, img.width, img.height);
+            const data = imgData.data;
+            
+            for (let i = 0; i < data.length; i += 4) {
+              const r = data[i];
+              const g = data[i + 1];
+              const b = data[i + 2];
+
+              if (activeFilter === "bw") {
+                const gray = 0.299 * r + 0.587 * g + 0.114 * b;
+                data[i] = data[i + 1] = data[i + 2] = gray;
+              } else if (activeFilter === "vintage") {
+                const tr = 0.393 * r + 0.769 * g + 0.189 * b;
+                const tg = 0.349 * r + 0.686 * g + 0.168 * b;
+                const tb = 0.272 * r + 0.534 * g + 0.131 * b;
+                data[i] = Math.min(255, (tr - 128) * 1.2 + 115);
+                data[i + 1] = Math.min(255, (tg - 128) * 1.2 + 115);
+                data[i + 2] = Math.min(255, (tb - 128) * 1.2 + 115);
+              }
+            }
+            ctx.putImageData(imgData, 0, 0);
             resolve(canvas.toDataURL("image/jpeg", 0.92));
           };
           img.src = src;
@@ -154,7 +168,6 @@ function Upload() {
     setBoothPhotos(bakedPhotos);
     navigate({ to: "/final" });
   };
-
   return (
     <main className="min-h-screen bg-background px-6 py-10 flex flex-col items-center animate-fade-in">
       <Link

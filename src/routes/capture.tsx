@@ -52,22 +52,46 @@ function Capture() {
     const size = Math.min(v.videoWidth, v.videoHeight);
     c.width = size;
     c.height = size;
-    const ctx = c.getContext("2d")!;
+    // willReadFrequently optimizes the canvas for direct pixel manipulation
+    const ctx = c.getContext("2d", { willReadFrequently: true })!;
 
-    // 3. Bake the filter directly into the saved photo!
-    const canvasFilters = {
-      normal: "none",
-      bw: "grayscale(100%)",
-      vintage: "sepia(100%) contrast(125%) brightness(90%)",
-    };
-    ctx.filter = canvasFilters[activeFilter];
-
-    // mirror
+    // mirror the image
     ctx.translate(size, 0);
     ctx.scale(-1, 1);
     const sx = (v.videoWidth - size) / 2;
     const sy = (v.videoHeight - size) / 2;
     ctx.drawImage(v, sx, sy, size, size, 0, 0, size, size);
+
+    // Reset transform so our pixel math applies cleanly
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+
+    // 📸 Mobile-Safe Pixel Baking
+    if (activeFilter !== "normal") {
+      const imgData = ctx.getImageData(0, 0, size, size);
+      const data = imgData.data;
+      
+      for (let i = 0; i < data.length; i += 4) {
+        const r = data[i];
+        const g = data[i + 1];
+        const b = data[i + 2];
+
+        if (activeFilter === "bw") {
+          const gray = 0.299 * r + 0.587 * g + 0.114 * b;
+          data[i] = data[i + 1] = data[i + 2] = gray;
+        } else if (activeFilter === "vintage") {
+          // Sepia color math
+          const tr = 0.393 * r + 0.769 * g + 0.189 * b;
+          const tg = 0.349 * r + 0.686 * g + 0.168 * b;
+          const tb = 0.272 * r + 0.534 * g + 0.131 * b;
+          // Contrast and Brightness adjustments
+          data[i] = Math.min(255, (tr - 128) * 1.2 + 115);
+          data[i + 1] = Math.min(255, (tg - 128) * 1.2 + 115);
+          data[i + 2] = Math.min(255, (tb - 128) * 1.2 + 115);
+        }
+      }
+      ctx.putImageData(imgData, 0, 0);
+    }
+
     return c.toDataURL("image/jpeg", 0.92);
   };
 
