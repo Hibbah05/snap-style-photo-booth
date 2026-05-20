@@ -114,7 +114,7 @@ function Final() {
             key={s.id}
             onPointerDown={(e) => onPointerDown(s.id, e)}
             className="absolute text-3xl cursor-grab active:cursor-grabbing"
-            style={{ left: s.x, top: s.y, transform: "translate(-50%, -50%)", color: "oklch(0.55 0.15 20)" }}
+            style={{ left: s.x, top: s.y, transform: "translate(-50%, -50%)", color: "var(--foreground)" }}
           >
             {s.emoji}
           </span>
