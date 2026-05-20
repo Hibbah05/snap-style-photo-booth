@@ -21,6 +21,8 @@ function readFile(file: File): Promise<string> {
 function Upload() {
   const [photos, setPhotos] = useState<(string | null)[]>([null, null, null]);
   const [error, setError] = useState<string | null>(null);
+  const [dragSrcIndex, setDragSrcIndex] = useState<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
   const navigate = useNavigate();
 
   const onPickSingle = async (i: number, file: File | null) => {
@@ -58,6 +60,48 @@ function Upload() {
       next[i] = null;
       return next;
     });
+  };
+
+  const swap = (a: number, b: number) => {
+    setPhotos((prev) => {
+      const next = [...prev];
+      [next[a], next[b]] = [next[b], next[a]];
+      return next;
+    });
+  };
+
+  const handleDragStart = (e: React.DragEvent, i: number) => {
+    setDragSrcIndex(i);
+    e.dataTransfer.effectAllowed = "move";
+    const img = e.currentTarget.querySelector("img");
+    if (img) {
+      e.dataTransfer.setDragImage(img, img.clientWidth / 2, img.clientHeight / 2);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent, i: number) => {
+    e.preventDefault();
+    if (dragSrcIndex !== null && dragSrcIndex !== i) {
+      setDragOverIndex(i);
+    }
+  };
+
+  const handleDragLeave = () => {
+    setDragOverIndex(null);
+  };
+
+  const handleDrop = (e: React.DragEvent, i: number) => {
+    e.preventDefault();
+    if (dragSrcIndex !== null && dragSrcIndex !== i) {
+      swap(dragSrcIndex, i);
+    }
+    setDragSrcIndex(null);
+    setDragOverIndex(null);
+  };
+
+  const handleDragEnd = () => {
+    setDragSrcIndex(null);
+    setDragOverIndex(null);
   };
 
   const filledCount = photos.filter(Boolean).length;
@@ -98,47 +142,69 @@ function Upload() {
       </label>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 w-full max-w-3xl">
-        {photos.map((p, i) => (
-          <div
-            key={i}
-            className="relative animate-scale-in"
-            style={{ animationDelay: `${i * 80}ms`, animationFillMode: "backwards" }}
-          >
-            <label className="relative block aspect-square bg-card border border-border cursor-pointer hover:border-foreground transition-colors overflow-hidden group">
-              {p ? (
-                <img
-                  src={p}
-                  alt={`frame ${i + 1}`}
-                  className="w-full h-full object-cover animate-fade-in"
+        {photos.map((p, i) => {
+          const isDraggingOver = dragOverIndex === i;
+          const isDragging = dragSrcIndex === i;
+          return (
+            <div
+              key={i}
+              draggable={!!p && allReady}
+              onDragStart={(e) => handleDragStart(e, i)}
+              onDragOver={(e) => handleDragOver(e, i)}
+              onDragLeave={handleDragLeave}
+              onDrop={(e) => handleDrop(e, i)}
+              onDragEnd={handleDragEnd}
+              className={[
+                "relative animate-scale-in select-none",
+                isDraggingOver ? "ring-2 ring-foreground ring-offset-2 ring-offset-background scale-105" : "",
+                isDragging ? "opacity-40" : "",
+                !!p && allReady ? "cursor-move" : "",
+              ].join(" ")}
+              style={{ animationDelay: `${i * 80}ms`, animationFillMode: "backwards" }}
+            >
+              <label className="relative block aspect-square bg-card border border-border cursor-pointer hover:border-foreground transition-colors overflow-hidden group">
+                {p ? (
+                  <img
+                    src={p}
+                    alt={`frame ${i + 1}`}
+                    className="w-full h-full object-cover animate-fade-in pointer-events-none"
+                    draggable={false}
+                  />
+                ) : (
+                  <div className="absolute inset-0 flex flex-col items-center justify-center">
+                    <p className="text-4xl font-serif text-muted-foreground group-hover:text-foreground transition-colors">+</p>
+                    <p className="text-xs tracking-[0.25em] uppercase text-muted-foreground mt-2">
+                      frame {i + 1}
+                    </p>
+                  </div>
+                )}
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => onPickSingle(i, e.target.files?.[0] ?? null)}
                 />
-              ) : (
-                <div className="absolute inset-0 flex flex-col items-center justify-center">
-                  <p className="text-4xl font-serif text-muted-foreground group-hover:text-foreground transition-colors">+</p>
-                  <p className="text-xs tracking-[0.25em] uppercase text-muted-foreground mt-2">
-                    frame {i + 1}
-                  </p>
-                </div>
+              </label>
+              {p && (
+                <button
+                  type="button"
+                  onClick={() => removeAt(i)}
+                  className="absolute top-2 right-2 w-7 h-7 bg-background/90 border border-border text-xs hover:bg-foreground hover:text-background transition-colors"
+                  aria-label={`Remove frame ${i + 1}`}
+                >
+                  ×
+                </button>
               )}
-              <input
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={(e) => onPickSingle(i, e.target.files?.[0] ?? null)}
-              />
-            </label>
-            {p && (
-              <button
-                type="button"
-                onClick={() => removeAt(i)}
-                className="absolute top-2 right-2 w-7 h-7 bg-background/90 border border-border text-xs hover:bg-foreground hover:text-background transition-colors"
-                aria-label={`Remove frame ${i + 1}`}
-              >
-                ×
-              </button>
-            )}
-          </div>
-        ))}
+            </div>
+          );
+        })}
       </div>
+
+      {allReady && (
+        <p className="mt-4 text-xs tracking-[0.2em] uppercase text-muted-foreground animate-fade-in">
+          drag frames to reorder
+        </p>
+      )}
 
       {error && (
         <p className="mt-6 text-sm text-destructive animate-fade-in">{error}</p>
